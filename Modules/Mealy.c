@@ -1,10 +1,10 @@
 #include <stddef.h>
 #include "Mealy.h"
 
-Mealy_ReturnType Mealy_Start(Mealy_MachineType* machine,
-	const Mealy_StateType* states,
-	uint32_t stateLength,
-	uint32_t transitionLength)
+Mealy_ReturnType Mealy_Start(Mealy_MachineType *machine,
+							 const Mealy_StateType *states,
+							 uint32_t stateLength,
+							 uint32_t transitionLength)
 {
 	if ((machine == NULL) || (states == NULL))
 	{
@@ -21,32 +21,34 @@ Mealy_ReturnType Mealy_Start(Mealy_MachineType* machine,
 			return MEALY_RETURN_NULL;
 		}
 	}
-	machine->Current = 0; /*Ĭ����ʼ״̬�̶�Ϊ 0*/
+	machine->Current = 0; /*默认起始状态固定为 0*/
 	machine->States = states;
 	machine->StateLength = stateLength;
 	machine->TransitionLength = transitionLength;
 	return MEALY_RETURN_OK;
 }
 
-Mealy_ReturnType Mealy_Stop(Mealy_MachineType* machine)
+Mealy_ReturnType Mealy_Stop(Mealy_MachineType *machine)
 {
 	if (machine == NULL)
 	{
 		return MEALY_RETURN_NULL;
 	}
-	machine->Current = machine->StateLength; /*����Ϊ����״̬������״̬���ڵ���״̬����*/
+	machine->Current = machine->StateLength; /*设置为最终状态，最终状态大于等于状态数量*/
 	return MEALY_RETURN_OK;
 }
 
-Mealy_ReturnType Mealy_Raise(Mealy_MachineType* machine,
-	uint32_t event,
-	void* parameter)
+Mealy_ReturnType Mealy_Raise(Mealy_MachineType *machine,
+							 uint32_t event,
+							 void *parameter)
 {
+	const Mealy_TransitionType *t;
+
 	if (machine == NULL)
 	{
 		return MEALY_RETURN_NULL;
 	}
-	if (machine->Current >= machine->StateLength) /*����״̬��ɶҲ����*/
+	if (machine->Current >= machine->StateLength) /*最终状态，啥也不做*/
 	{
 		return MEALY_RETURN_IGNORED_FINAL;
 	}
@@ -59,13 +61,13 @@ Mealy_ReturnType Mealy_Raise(Mealy_MachineType* machine,
 		return MEALY_RETURN_NULL;
 	}
 
-	const Mealy_TransitionType* t = machine->States[machine->Current].Transitions; /*O(1) ���ʵ��*/
+	t = machine->States[machine->Current].Transitions; /*O(1) 查表实现*/
 	if (t == NULL)
 	{
 		return MEALY_RETURN_NULL;
 	}
 	t = &t[event];
-	if (t->Next == 0U) /*�������ٽ�����ʼ״̬��ɶҲ����*/
+	if (t->Next == 0U) /*不允许再进入起始状态，啥也不做*/
 	{
 		return MEALY_RETURN_IGNORED_INITIAL;
 	}

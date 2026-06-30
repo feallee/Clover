@@ -323,7 +323,7 @@
             <PlainCh>0</PlainCh>
             <Ropi>0</Ropi>
             <Rwpi>0</Rwpi>
-            <wLevel>2</wLevel>
+            <wLevel>1</wLevel>
             <uThumb>0</uThumb>
             <uSurpInc>0</uSurpInc>
             <uC99>1</uC99>
@@ -389,11 +389,6 @@
               <FileType>1</FileType>
               <FilePath>.\Source\main.c</FilePath>
             </File>
-            <File>
-              <FileName>Test.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Source\Test.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -418,21 +413,6 @@
               <FileName>Core.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\Boards\STM32F103x\Core.c</FilePath>
-            </File>
-            <File>
-              <FileName>Power.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\Boards\STM32F103x\Power.c</FilePath>
-            </File>
-            <File>
-              <FileName>RealTimer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\Boards\STM32F103x\RealTimer.c</FilePath>
-            </File>
-            <File>
-              <FileName>Usart.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\Boards\STM32F103x\Usart.c</FilePath>
             </File>
           </Files>
         </Group>

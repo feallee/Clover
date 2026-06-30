@@ -4,9 +4,9 @@
 
 extern uint32_t Core_EnterCritical(void)
 {
-    uint32_t mask = __get_PRIMASK();
-    __disable_irq();
-    return mask;
+    uint32_t primask = __get_PRIMASK();
+    __set_PRIMASK(1);
+    return primask;
 }
 
 extern void Core_ExitCritical(uint32_t primask)

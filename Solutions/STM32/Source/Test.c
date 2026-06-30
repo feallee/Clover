@@ -5,15 +5,18 @@
 #include "Usart.h"
 #include "Config.h"
 
+#define _TEST_USART_BUFFER_SIZE (256 * 2)
+
 static RealTimer_DeviceType rtc = NULL;
 static Usart_DeviceType usart1 = NULL;
-static uint8_t _TxBuffer[USART_RECEIVE_BUFFER_SIZE_1];
+static uint8_t _TxBuffer[_TEST_USART_BUFFER_SIZE];
 
 /* USART1接收回调 */
 static void Usart1Received(Usart_DeviceType device, size_t length)
 {
+    Application_MessageType msg;
     (void)device;
-    Application_MessageType msg = {
+    msg = (Application_MessageType){
         .ID = APPLICATION_MESSAGE_ID_USART1_RECEIVED,
         .WParam = (uint16_t)length
     };
@@ -30,9 +33,10 @@ static void Usart1Transmitted(Usart_DeviceType device, size_t length)
 /* RTC闹钟回调 */
 static void RTCAlarmed(RealTimer_DeviceType device, void *parameter)
 {
+    Application_MessageType msg;
     (void)device;
     (void)parameter;
-    Application_MessageType msg = {.ID = APPLICATION_MESSAGE_ID_RTC_TIMED};
+    msg = (Application_MessageType){.ID = APPLICATION_MESSAGE_ID_RTC_TIMED};
     Application_PostMessage(&msg);
 }
 
@@ -46,10 +50,11 @@ static void OpenDevice(Application_MessageType *message)
         {
         }
     }
-    usart1 = Usart_GetDevice(USART_ID_1);
+    usart1 = Usart_GetDevice("COM1,115200,8,N,1");
     if (usart1 != NULL)
     {
-        Usart_Open(usart1, 115200, Usart1Received, Usart1Transmitted);
+        Usart_SetHandler(usart1, Usart1Received, Usart1Transmitted);
+        Usart_Open(usart1);
     }
 #if APPLICATION_DEBUG_MODE == 1
     Core_EnableDebug();
@@ -68,8 +73,8 @@ APPLICATION_REG_MESSAGE_HANDLER_L1(APPLICATION_MESSAGE_ID_RTC_TIMED, Timed1);
 
 static void Idle(Application_MessageType *message)
 {
-    (void)message;
     static uint8_t d = 0;
+    (void)message;
     if (++d == 10)
     {
         d = 0;
