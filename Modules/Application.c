@@ -8,10 +8,10 @@
  * - 消息处理器执行机制
  * - 主循环调度
  *
- * @note 依赖 Core.h 提供临界区保护功能。
+ * @note 依赖 Port.h 提供临界区保护功能。
  */
 
-#include "Core.h"
+#include "Port.h"
 #include "Application.h"
 
 #if 1 /* 消息处理器哨兵和接口 */
@@ -288,9 +288,7 @@
     X(254)          \
     X(255)
 
-#if APPLICATION_MESSAGE_ID_RANGE == 8U
-#define _LIST _LIST8
-#elif APPLICATION_MESSAGE_ID_RANGE == 16U
+#if APPLICATION_MESSAGE_ID_RANGE == 16U
 #define _LIST _LIST16
 #elif APPLICATION_MESSAGE_ID_RANGE == 32U
 #define _LIST _LIST32
@@ -301,7 +299,7 @@
 #elif APPLICATION_MESSAGE_ID_RANGE == 256U
 #define _LIST _LIST256
 #else
-#error "Invalid APPLICATION_MESSAGE_ID_COUNT value"
+#define _LIST _LIST8
 #endif
 
 #define _HANDLER_LEVEL_BEGIN 0
@@ -355,8 +353,8 @@ static void ExecuteHandler(Application_MessageType *message)
  */
 static struct
 {
-    volatile size_t Head;                                         ///< 读指针，指向下一个要读取的消息位置
-    volatile size_t Tail;                                         ///< 写指针，指向下一个要写入的消息位置
+    volatile uint32_t Head;                                       ///< 读指针，指向下一个要读取的消息位置
+    volatile uint32_t Tail;                                       ///< 写指针，指向下一个要写入的消息位置
     Application_MessageType Buffer[APPLICATION_MESSAGE_CAPACITY]; ///< 消息缓冲区（环形队列）
 } _Queue = {0};
 
@@ -366,74 +364,73 @@ static struct
  * 用于将 Tail/Head 索引映射到缓冲区数组索引，要求容量必须是 2 的整数次幂。
  * 等效于 `index % APPLICATION_MESSAGE_CAPACITY`，但位运算更高效。
  */
-#define _MESSAGE_CAPACITY_MASK (APPLICATION_MESSAGE_CAPACITY - 1ULL)
+#define _MESSAGE_CAPACITY_MASK (APPLICATION_MESSAGE_CAPACITY - UINT32_C(1))
 
 int Application_Run(void *parameter)
 {
     (void)parameter;
-    Application_MessageType msg = {0};
-    msg.ID = APPLICATION_MESSAGE_ID_INIT;
+    Application_MessageType msg;
+    msg = (Application_MessageType){.ID = APPLICATION_MESSAGE_ID_INIT};
     ExecuteHandler(&msg);
-    msg.ID = APPLICATION_MESSAGE_ID_OPEN;
+    msg = (Application_MessageType){.ID = APPLICATION_MESSAGE_ID_OPEN};
     ExecuteHandler(&msg);
-    while (1)
+    for (;;)
     {
-        msg.ID = APPLICATION_MESSAGE_ID_FEED;
+        msg = (Application_MessageType){.ID = APPLICATION_MESSAGE_ID_FEED};
         ExecuteHandler(&msg);
+        uint32_t st = Port_Lock();
+        if (_Queue.Head == _Queue.Tail) /*队列为空*/
         {
-            uint32_t mask = Core_EnterCritical();
-            if (_Queue.Head == _Queue.Tail) /*队列为空*/
-            {
-                Core_ExitCritical(mask);
-                msg.ID = APPLICATION_MESSAGE_ID_IDLE;
-                ExecuteHandler(&msg);
-            }
-            else
-            {
-                msg = _Queue.Buffer[_Queue.Head & _MESSAGE_CAPACITY_MASK];
-                _Queue.Head++;
-                Core_ExitCritical(mask);
-                ExecuteHandler(&msg);
-            }
+            Port_Unlock(st);
+            msg = (Application_MessageType){.ID = APPLICATION_MESSAGE_ID_IDLE};
+            ExecuteHandler(&msg);
+        }
+        else
+        {
+            msg = _Queue.Buffer[_Queue.Head & _MESSAGE_CAPACITY_MASK];
+            _Queue.Head++;
+            Port_Unlock(st);
+            ExecuteHandler(&msg);
         }
     }
+    return 0;
 }
 
-int Application_PostMessage(Application_MessageType *message)
+Application_ErrorType Application_PostMessage(Application_MessageType *message)
 {
     if (message == NULL)
     {
-        return 0;
+        return APPLICATION_ERROR_NULL;
     }
     if (message->ID >= APPLICATION_MESSAGE_ID_RANGE)
     {
-        return 0;
+        return APPLICATION_ERROR_RANGE;
     }
-    uint32_t mask = Core_EnterCritical();
+    uint32_t st = Port_Lock();
     if (_Queue.Tail - _Queue.Head == APPLICATION_MESSAGE_CAPACITY) /*队列已满*/
     {
-        Core_ExitCritical(mask);
-        return 0;
+        Port_Unlock(st);
+        return APPLICATION_ERROR_FULL;
     }
     else
     {
         _Queue.Buffer[_Queue.Tail & _MESSAGE_CAPACITY_MASK] = *message; /*消息最大16字节，直接赋值*/
         _Queue.Tail++;
-        Core_ExitCritical(mask);
-        return 1;
+        Port_Unlock(st);
+        return APPLICATION_ERROR_NONE;
     }
 }
 
-int Application_SendMessage(Application_MessageType *message)
+Application_ErrorType Application_SendMessage(Application_MessageType *message)
 {
     if (message == NULL)
     {
-        return 0;
+        return APPLICATION_ERROR_NULL;
     }
     if (message->ID >= APPLICATION_MESSAGE_ID_RANGE)
     {
-        return 0;
+        return APPLICATION_ERROR_RANGE;
     }
     ExecuteHandler(message);
-    return 1;
+    return APPLICATION_ERROR_NONE;
 }

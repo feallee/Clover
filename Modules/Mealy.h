@@ -8,8 +8,8 @@
  * @warning 本库不支持递归状态机调用，即在状态机的回调函数中再次调用状态机接口。
  * @warning 本库在调用 Mealy_Raise 前必须确保已正确调用 Mealy_Start 启动了状态机，否则有可能出现未定义行为。
  * @section 状态索引布局（约定状态索引必须连续；状态数量 STATE_LENGTH 等于最终状态索引 STATE_FINAL），参考《用法示例》：
- * | 状态名称   | 建议状态符号  |状态索引           | 
- * | ---------- | ------------- | ----------------- | 
+ * | 状态名称   | 建议状态符号  |状态索引           |
+ * | ---------- | ------------- | ----------------- |
  * | 起始状态   | STATE_INITIAL | 0                 |
  * | 自定义状态 | (用户自定义)  | 1 ~ STATE_FINAL-1 |
  * | 最终状态   | STATE_FINAL   | >= STATE_FINAL    |
@@ -173,43 +173,25 @@
  * @endcode
  */
 #pragma once
-#include <stdint.h>
+#include <inttypes.h>
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
     /**
-     * @brief 版本号。
+     * @brief 返回值类型。
      */
-#define MEALY_VERSION 1
-
-     /**
-      * @brief 返回值类型。
-      */
     typedef enum
     {
-        /**
-         * @brief 操作成功。
-         */
-        MEALY_RETURN_OK = 1,
-        /**
-         * @brief 参数为空指针或必需资源为空。
-         */
-        MEALY_RETURN_NULL = 0,
-        /**
-         * @brief 参数越界或非法值。
-         */
-        MEALY_RETURN_OVERFLOW = -1,
-        /**
-         * @brief 忽略进入起始状态。
-         */
-        MEALY_RETURN_IGNORED_INITIAL = -2,
-        /**
-         * @brief 最终状态忽略引发事件。
-         */
-        MEALY_RETURN_IGNORED_FINAL = -3,
-    } Mealy_ReturnType;
+        MEALY_ERROR_NONE = 0,             /**< 操作成功，无错误。 */
+        MEALY_ERROR_NULL = -1,            /**< 资源为 NULL。 */
+        MEALY_ERROR_RANGE = -2,           /**< 资源超出有效范围。 */
+        MEALY_ERROR_EMPTY = -3,           /**< 资源为空。 */
+        MEALY_ERROR_FULL = -4,            /**< 资源已满。 */
+        MEALY_ERROR_IGNORED_INITIAL = -5, /**< 忽略进入起始状态。 */
+        MEALY_ERROR_IGNORED_FINAL = -6,   /**< 忽略最终状态的所有事件。 */
+    } Mealy_ErrorType;
 
     /**
      * @brief 状态机活动回调函数类型。
@@ -219,9 +201,9 @@ extern "C"
      * @param parameter 事件关联参数，可为 NULL。
      */
     typedef void (*Mealy_ActivityType)(uint32_t current,
-        uint32_t next,
-        uint32_t event,
-        void* parameter);
+                                       uint32_t next,
+                                       uint32_t event,
+                                       void *parameter);
 
     /**
      * @brief 状态机状态转换类型。
@@ -247,7 +229,7 @@ extern "C"
         /**
          * @brief 状态转换表。
          */
-        const Mealy_TransitionType* Transitions;
+        const Mealy_TransitionType *Transitions;
     } Mealy_StateType;
 
     /**
@@ -262,7 +244,7 @@ extern "C"
         /**
          * @brief 状态机包含的状态表。
          */
-        const Mealy_StateType* States;
+        const Mealy_StateType *States;
         /**
          * @brief 状态数量。必须与状态表中状态数量匹配，最少 2 个状态。
          */
@@ -280,40 +262,40 @@ extern "C"
      * @param states 状态表。
      * @param stateLength 状态数量。
      * @param transitionLength 状态转换数量（等于事件数量）。
-     * @return 返回启动结果。
-     * @retval MEALY_RETURN_OK 启动成功。
-     * @retval MEALY_RETURN_NULL 参数为空指针或必需资源为空。
-     * @retval MEALY_RETURN_OVERFLOW 参数越界或非法值。
+     * @return 返回错误码。
+     * @retval MEALY_ERROR_NONE 启动成功。
+     * @retval MEALY_ERROR_NULL 参数为空指针或必需资源为空。
+     * @retval MEALY_ERROR_RANGE 参数越界或非法值。
      */
-    Mealy_ReturnType Mealy_Start(Mealy_MachineType* machine,
-        const Mealy_StateType* states,
-        uint32_t stateLength,
-        uint32_t transitionLength);
+    Mealy_ErrorType Mealy_Start(Mealy_MachineType *machine,
+                                const Mealy_StateType *states,
+                                uint32_t stateLength,
+                                uint32_t transitionLength);
 
     /**
      * @brief 强制停止状态机并转换到最终状态。
      * @param machine 状态机实例。
-     * @return 返回停止结果。
-     * @retval MEALY_RETURN_OK 停止成功。
-     * @retval MEALY_RETURN_NULL 参数为空指针或必需资源为空。
+     * @return 返回错误码。
+     * @retval MEALY_ERROR_NONE 停止成功。
+     * @retval MEALY_ERROR_NULL 参数为空指针或必需资源为空。
      */
-    Mealy_ReturnType Mealy_Stop(Mealy_MachineType* machine);
+    Mealy_ErrorType Mealy_Stop(Mealy_MachineType *machine);
 
     /**
      * @brief 引发事件。
      * @param machine 状态机实例。
      * @param event 事件索引。
      * @param parameter 事件关联参数。
-     * @return 返回事件处理结果。
-     * @retval MEALY_RETURN_OK 引发事件成功。
-     * @retval MEALY_RETURN_NULL 参数为空指针或必需资源为空。
-     * @retval MEALY_RETURN_OVERFLOW 参数越界或非法值。
-     * @retval MEALY_RETURN_IGNORED_INITIAL 忽略进入起始状态的所有事件。
-     * @retval MEALY_RETURN_IGNORED_FINAL 状态机处于最终状态，忽略所有事件。
+     * @return 返回错误码。
+     * @retval MEALY_ERROR_NONE 引发事件成功。
+     * @retval MEALY_ERROR_NULL 参数为空指针或必需资源为空。
+     * @retval MEALY_ERROR_RANGE 参数越界或非法值。
+     * @retval MEALY_ERROR_IGNORED_INITIAL 忽略进入起始状态的所有事件。
+     * @retval MEALY_ERROR_IGNORED_FINAL 状态机处于最终状态，忽略所有事件。
      */
-    Mealy_ReturnType Mealy_Raise(Mealy_MachineType* machine,
-        uint32_t event,
-        void* parameter);
+    Mealy_ErrorType Mealy_Raise(Mealy_MachineType *machine,
+                                uint32_t event,
+                                void *parameter);
 #ifdef __cplusplus
 }
 #endif

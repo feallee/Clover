@@ -281,9 +281,10 @@ USBWakeUp_IRQHandler
 ;*******************************************************************************
 ; User Stack and Heap initialization
 ;*******************************************************************************
+                 EXPORT  __initial_sp
+                
                  IF      :DEF:__MICROLIB           
                 
-                 EXPORT  __initial_sp
                  EXPORT  __heap_base
                  EXPORT  __heap_limit
                 

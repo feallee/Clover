@@ -18,6 +18,7 @@ void Power_EnterMode(Power_ModeType mode)
 
         // 唤醒后必须重新配置系统时钟
         SystemInit();
+        SystemCoreClockUpdate();
     }
     break;
 

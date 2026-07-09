@@ -59,18 +59,19 @@
  * @warning 本库只支持 C99 及以上标准。
  *
  * @note 依赖项:
- *       - Config.h: 必须定义 APPLICATION_MESSAGE_CAPACITY 等宏。
+ *       - Port.h:  提供 Port_Lock/Port_Unlock 内联函数用于临界区保护。
  *       - 链接脚本: GCC 编译器需配置 Entry.* 段。
  *
  * @note 修订记录
  * | 版本 | 日期       | 作者                | 日志                                                                            |
  * | ---- | ---------- | ------------------- | ------------------------------------------------------------------------------- |
+ * |      | 2026/07/05 | feallee@hotmail.com | 临界区改用 Port_Lock/Port_Unlock 内联函数，修复系统消息 payload 残留问题。      |
  * |      | 2026/05/08 | feallee@hotmail.com | 优化代码。                                                                      |
  * |      | 2026/03/06 | feallee@hotmail.com | 初版。                                                                          |
  */
 #pragma once
-#include <stdint.h>
 #include <stddef.h>
+#include <inttypes.h>
 #include "Config.h"
 #ifdef __cplusplus
 extern "C"
@@ -79,24 +80,24 @@ extern "C"
 
 #if 1 /*配置校正*/
 
-#if (!defined(APPLICATION_MESSAGE_TYPE_PAYLOAD)) || \
-    (APPLICATION_MESSAGE_TYPE_PAYLOAD < 1U) ||      \
-    (APPLICATION_MESSAGE_TYPE_PAYLOAD > 5U)
-#define APPLICATION_MESSAGE_TYPE_PAYLOAD 1U
+#if (!defined(APPLICATION_MESSAGE_TYPE_PAYLOAD)) ||     \
+    (APPLICATION_MESSAGE_TYPE_PAYLOAD < UINT32_C(1)) || \
+    (APPLICATION_MESSAGE_TYPE_PAYLOAD > UINT32_C(2))
+#define APPLICATION_MESSAGE_TYPE_PAYLOAD UINT32_C(1)
 #endif
 
-#if (!defined(APPLICATION_MESSAGE_ID_RANGE)) || \
-    (APPLICATION_MESSAGE_ID_RANGE < 8U) ||      \
-    (APPLICATION_MESSAGE_ID_RANGE > 256U) ||    \
-    ((APPLICATION_MESSAGE_ID_RANGE & (APPLICATION_MESSAGE_ID_RANGE - 1U)) != 0U)
-#define APPLICATION_MESSAGE_ID_RANGE 8U
+#if (!defined(APPLICATION_MESSAGE_ID_RANGE)) ||       \
+    (APPLICATION_MESSAGE_ID_RANGE < UINT32_C(8)) ||   \
+    (APPLICATION_MESSAGE_ID_RANGE > UINT32_C(256)) || \
+    ((APPLICATION_MESSAGE_ID_RANGE & (APPLICATION_MESSAGE_ID_RANGE - UINT32_C(1))) != UINT32_C(0))
+#define APPLICATION_MESSAGE_ID_RANGE UINT32_C(8)
 #endif
 
-#if (!defined(APPLICATION_MESSAGE_CAPACITY)) ||                                      \
-    (APPLICATION_MESSAGE_CAPACITY < 4ULL) ||                                         \
-    (APPLICATION_MESSAGE_CAPACITY > (1ULL << (8ULL * __SIZEOF_POINTER__ - 1ULL))) || \
-    ((APPLICATION_MESSAGE_CAPACITY & (APPLICATION_MESSAGE_CAPACITY - 1ULL)) != 0ULL)
-#define APPLICATION_MESSAGE_CAPACITY 1024ULL
+#if (!defined(APPLICATION_MESSAGE_CAPACITY)) ||              \
+    (APPLICATION_MESSAGE_CAPACITY < UINT32_C(2)) ||          \
+    (APPLICATION_MESSAGE_CAPACITY > UINT32_C(2147483648)) || \
+    ((APPLICATION_MESSAGE_CAPACITY & (APPLICATION_MESSAGE_CAPACITY - UINT32_C(1))) != UINT32_C(0))
+#define APPLICATION_MESSAGE_CAPACITY UINT32_C(64)
 #endif
 
 #ifndef APPLICATION_LINK_ROOT_SYMBOL
@@ -145,23 +146,35 @@ extern "C"
 #endif
 
     /**
+     * @brief 应用框架错误类型。
+     */
+    typedef enum
+    {
+        APPLICATION_ERROR_NONE = 0,   /**< 操作成功，无错误。 */
+        APPLICATION_ERROR_NULL = -1,  /**< 资源为 NULL。 */
+        APPLICATION_ERROR_RANGE = -2, /**< 资源超出有效范围。 */
+        APPLICATION_ERROR_EMPTY = -3, /**< 资源为空。 */
+        APPLICATION_ERROR_FULL = -4   /**< 资源已满。 */
+    } Application_ErrorType;
+
+    /**
      * @brief 应用消息类型。
      */
     typedef struct
     {
-#if APPLICATION_MESSAGE_TYPE_PAYLOAD >= 1U
+#if APPLICATION_MESSAGE_TYPE_PAYLOAD >= UINT32_C(1)
         uint8_t ID; ///< 消息 ID (0 到 APPLICATION_MESSAGE_ID_RANGE-1)。
 #endif
-#if APPLICATION_MESSAGE_TYPE_PAYLOAD >= 2U
+#if APPLICATION_MESSAGE_TYPE_PAYLOAD >= UINT32_C(2)
         uint8_t BParam; ///< 字节参数 (8位)
 #endif
-#if APPLICATION_MESSAGE_TYPE_PAYLOAD >= 3U
+#if APPLICATION_MESSAGE_TYPE_PAYLOAD >= UINT32_C(3)
         uint16_t WParam; ///< 字参数 (16位)
 #endif
-#if APPLICATION_MESSAGE_TYPE_PAYLOAD >= 4U
+#if APPLICATION_MESSAGE_TYPE_PAYLOAD >= UINT32_C(4)
         uint32_t DParam; ///< 双字参数 (32位)
 #endif
-#if APPLICATION_MESSAGE_TYPE_PAYLOAD >= 5U
+#if APPLICATION_MESSAGE_TYPE_PAYLOAD >= UINT32_C(5)
         uint64_t QParam; ///< 四字参数 (64位)
 #endif
     } Application_MessageType;
@@ -180,7 +193,7 @@ extern "C"
      *
      * @note 该函数包含无限循环，正常情况下不会返回。
      * @note 函数启动时会先同步发送 APPLICATION_MESSAGE_ID_INIT 消息进行初始化。
-     * @note 当队列为空时，发送 IDLE 消息，用户可在 IDLE 处理器中进入低功耗模式。
+     * @note 当队列为空时，发送 APPLICATION_MESSAGE_ID_IDLE 消息，用户可在消息处理器中进入低功耗模式。
      */
     int Application_Run(void *parameter);
 
@@ -188,14 +201,14 @@ extern "C"
      * @brief 异步投递消息到队列。
      *
      * 将消息添加到消息队列尾部，由主循环异步处理。
-     * 如果队列已满，则投递失败返回 0。
+     * 如果队列已满，则投递失败返回 APPLICATION_ERROR_FULL。
      *
      * @param message 指向要投递的消息的指针，不允许为 NULL。
-     * @return 返回成功投递消息数量。
+     * @return 返回 Application_ErrorType 错误码。
      *
      * @note 该函数是线程/中断安全的，可以在中断中调用。
      */
-    int Application_PostMessage(Application_MessageType *message);
+    Application_ErrorType Application_PostMessage(Application_MessageType *message);
 
     /**
      * @brief 同步发送消息
@@ -204,12 +217,12 @@ extern "C"
      * 处理器按级别顺序执行：L1 -> L2 -> ... -> L8，同一级别内的处理器按链接顺序执行。
      *
      * @param message 指向要发送的消息的指针，不允许为 NULL。
-     * @return 返回发送消息数量。
+     * @return 返回 Application_ErrorType 错误码。
      *
      * @note 该函数是同步的，会阻塞直到所有处理器执行完毕。
      * @note 支持递归调用（处理器中再次调用 Application_SendMessage），但必须设计退出机制。
      */
-    int Application_SendMessage(Application_MessageType *message);
+    Application_ErrorType Application_SendMessage(Application_MessageType *message);
 
 #if 1 /* 内部使用宏，禁止外部使用和修改 */
 
