@@ -163,7 +163,7 @@ extern "C"
     typedef struct
     {
 #if APPLICATION_MESSAGE_TYPE_PAYLOAD >= UINT32_C(1)
-        uint8_t ID; ///< 消息 ID (0 到 APPLICATION_MESSAGE_ID_RANGE-1)。
+        uint8_t Id; ///< 消息 Id (0 到 APPLICATION_MESSAGE_ID_RANGE-1)。
 #endif
 #if APPLICATION_MESSAGE_TYPE_PAYLOAD >= UINT32_C(2)
         uint8_t BParam; ///< 字节参数 (8位)
