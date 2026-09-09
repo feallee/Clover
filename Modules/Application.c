@@ -323,16 +323,16 @@ typedef struct
 static const MessageTableType _Table[] = {_LIST(_REG_TABLE)};
 
 /**
- * @brief 执行指定消息 ID 的所有消息处理器。
+ * @brief 执行指定消息 Id 的所有消息处理器。
  *
- * 根据消息 ID 查找对应的处理器表，按级别顺序(L1-L8)执行所有已注册的处理器。
+ * 根据消息 Id 查找对应的处理器表，按级别顺序(L1-L8)执行所有已注册的处理器。
  * 内部使用 L0 和 L9 作为哨兵标记处理器表的边界，用户实际使用 L1-L8。
  *
  * @param message 指向待处理消息的指针。
  */
 static void ExecuteHandler(Application_MessageType *message)
 {
-    const MessageTableType *t = &_Table[message->ID];
+    const MessageTableType *t = &_Table[message->Id];
     for (const Application_MessageHandlerType *h = t->Begin + 1; h < t->End; h++)
     {
         if (*h != NULL)
@@ -370,19 +370,19 @@ int Application_Run(void *parameter)
 {
     (void)parameter;
     Application_MessageType msg;
-    msg = (Application_MessageType){.ID = APPLICATION_MESSAGE_ID_INIT};
+    msg = (Application_MessageType){.Id = APPLICATION_MESSAGE_ID_INIT};
     ExecuteHandler(&msg);
-    msg = (Application_MessageType){.ID = APPLICATION_MESSAGE_ID_OPEN};
+    msg = (Application_MessageType){.Id = APPLICATION_MESSAGE_ID_OPEN};
     ExecuteHandler(&msg);
     for (;;)
     {
-        msg = (Application_MessageType){.ID = APPLICATION_MESSAGE_ID_FEED};
+        msg = (Application_MessageType){.Id = APPLICATION_MESSAGE_ID_FEED};
         ExecuteHandler(&msg);
         uint32_t st = Port_Lock();
         if (_Queue.Head == _Queue.Tail) /*队列为空*/
         {
             Port_Unlock(st);
-            msg = (Application_MessageType){.ID = APPLICATION_MESSAGE_ID_IDLE};
+            msg = (Application_MessageType){.Id = APPLICATION_MESSAGE_ID_IDLE};
             ExecuteHandler(&msg);
         }
         else
@@ -402,7 +402,7 @@ Application_ErrorType Application_PostMessage(Application_MessageType *message)
     {
         return APPLICATION_ERROR_NULL;
     }
-    if (message->ID >= APPLICATION_MESSAGE_ID_RANGE)
+    if (message->Id >= APPLICATION_MESSAGE_ID_RANGE)
     {
         return APPLICATION_ERROR_RANGE;
     }
@@ -427,7 +427,7 @@ Application_ErrorType Application_SendMessage(Application_MessageType *message)
     {
         return APPLICATION_ERROR_NULL;
     }
-    if (message->ID >= APPLICATION_MESSAGE_ID_RANGE)
+    if (message->Id >= APPLICATION_MESSAGE_ID_RANGE)
     {
         return APPLICATION_ERROR_RANGE;
     }
