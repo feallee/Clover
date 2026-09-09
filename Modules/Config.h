@@ -16,11 +16,11 @@
 /**
  * @def APPLICATION_MESSAGE_TYPE_PAYLOAD
  * @brief 消息类型负载，表示负载包含的字段数量。值域[1,5]，如果没有定义或超出值域，应用程序会强制设置为默认值 1。
- * - 1U: 包含字段：Id(8 bit)。
- * - 2U: 包含字段：Id(8 bit), BParam(8 bit)。
- * - 3U: 包含字段：Id(8 bit), BParam(8 bit), WParam(16 bit)。
- * - 4U: 包含字段：Id(8 bit), BParam(8 bit), WParam(16 bit), DParam(32 bit)。
- * - 5U: 包含字段：Id(8 bit), BParam(8 bit), WParam(16 bit), DParam(32 bit), QParam(64 bit)。
+ * - 1: 包含字段：Id(8 bit)。
+ * - 2: 包含字段：Id(8 bit), BParam(8 bit)。
+ * - 3: 包含字段：Id(8 bit), BParam(8 bit), WParam(16 bit)。
+ * - 4: 包含字段：Id(8 bit), BParam(8 bit), WParam(16 bit), DParam(32 bit)。
+ * - 5: 包含字段：Id(8 bit), BParam(8 bit), WParam(16 bit), DParam(32 bit), QParam(64 bit)。
  * @note 由于负载字段会增加消息结构体的大小，建议根据实际需求选择合适的字段数量，以平衡功能和内存占用。
  */
 #define APPLICATION_MESSAGE_TYPE_PAYLOAD UINT32_C(1)
