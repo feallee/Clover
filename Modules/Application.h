@@ -1,6 +1,5 @@
 /**
  * @file Application.h
- * @copyright Copyright (c) 2026 weas.top team. All rights reserved.
  * @brief 消息驱动型的裸机应用程序框架，建议在应用程序中把消息处理器当作状态机的事件发生器使用。
  *
  * 本框架基于消息队列实现的事件驱动型应用程序框架，支持:
@@ -54,6 +53,8 @@
  *   //... other sections
  *
  * - 其它编译器，根据具体要求进行配置。
+ *
+ * @copyright Copyright (C) 2026 weas.top team. All rights reserved.
  *
  * @warning 函数 Application_PostMessage 和 Application_SendMessage 虽然支持递归调用，但必须设计退出机制，
  *         否则引起死循环或栈溢出。所以不建议在消息处理器中再投递或发送消息。
@@ -112,52 +113,54 @@ extern "C"
 #endif
 
 #if 1 /* Application 保留消息 {0,1,2,3}。 */
-/**
- * @defgroup application_reserved_ids 保留消息 ID。
- * @{
- */
 
 /**
- * @def APPLICATION_MESSAGE_ID_INIT
  * @brief 系统初始化消息 ID。用于应用程序启动时进行初始化操作(如全局变量等软件类操作)。
  */
 #define APPLICATION_MESSAGE_ID_INIT 0
 
 /**
- * @def APPLICATION_MESSAGE_ID_OPEN
  * @brief 打开设备消息 ID。用于应用程序启动时打开设备(如串口等硬件类操作)。
  */
 #define APPLICATION_MESSAGE_ID_OPEN 1
 
 /**
- * @def APPLICATION_MESSAGE_ID_FEED
  * @brief 喂狗消息 ID。用于应用程序喂狗。
  */
 #define APPLICATION_MESSAGE_ID_FEED 2
 
 /**
- * @def APPLICATION_MESSAGE_ID_IDLE
  * @brief 空闲消息 ID。用于应用程序空闲时执行操作(如休眠操作)。
  */
 #define APPLICATION_MESSAGE_ID_IDLE 3
 
-/**
- * @}
- */
 #endif
 
-    /**
-     * @brief 应用框架错误类型。
-     */
-    typedef enum
-    {
-        APPLICATION_ERROR_NONE = 0,   /**< 操作成功，无错误。 */
-        APPLICATION_ERROR_NULL = -1,  /**< 资源为 NULL。 */
-        APPLICATION_ERROR_RANGE = -2, /**< 资源超出有效范围。 */
-        APPLICATION_ERROR_EMPTY = -3, /**< 资源为空。 */
-        APPLICATION_ERROR_FULL = -4   /**< 资源已满。 */
-    } Application_ErrorType;
+#if 1 /* 错误码 */
+/**
+ * 操作成功，无错误。
+ */
+#define APPLICATION_ERROR_NONE (0)
+/**
+ * 资源为 NULL。
+ */
+#define APPLICATION_ERROR_NULL (-1)
+/**
+ * 资源超出有效范围。
+ */
+#define APPLICATION_ERROR_RANGE (-2)
+/**
+ * 资源为空。
+ */
+#define APPLICATION_ERROR_EMPTY (-3)
+/**
+ * 资源已满。
+ */
+#define APPLICATION_ERROR_FULL = (-4)
 
+#endif
+
+#if 1 /* 应用程序类型 */
     /**
      * @brief 应用消息类型。
      */
@@ -186,6 +189,10 @@ extern "C"
      */
     typedef void (*Application_MessageHandlerType)(Application_MessageType *message);
 
+#endif
+
+#if 1 /* 应用程序接口 */   
+
     /**
      * @brief 运行应用程序并处理消息循环。
      * 执行消息处理循环，不断从消息队列中取出消息并执行已注册的消息处理器。
@@ -205,11 +212,11 @@ extern "C"
      * 如果队列已满，则投递失败返回 APPLICATION_ERROR_FULL。
      *
      * @param message 指向要投递的消息的指针，不允许为 NULL。
-     * @return 返回 Application_ErrorType 错误码。
+     * @return 返回错误码。
      *
      * @note 该函数是线程/中断安全的，可以在中断中调用。
      */
-    Application_ErrorType Application_PostMessage(Application_MessageType *message);
+    int32_t Application_PostMessage(Application_MessageType *message);
 
     /**
      * @brief 同步发送消息
@@ -218,12 +225,12 @@ extern "C"
      * 处理器按级别顺序执行：L1 -> L2 -> ... -> L8，同一级别内的处理器按链接顺序执行。
      *
      * @param message 指向要发送的消息的指针，不允许为 NULL。
-     * @return 返回 Application_ErrorType 错误码。
+     * @return 返回错误码。
      *
      * @note 该函数是同步的，会阻塞直到所有处理器执行完毕。
-     * @note 支持递归调用（处理器中再次调用 Application_SendMessage），但必须设计退出机制。
      */
-    Application_ErrorType Application_SendMessage(Application_MessageType *message);
+    int32_t Application_SendMessage(Application_MessageType *message);
+#endif
 
 #if 1 /* 内部使用宏，禁止外部使用 */
 
@@ -242,14 +249,7 @@ extern "C"
         __attribute__((used, section(_APPLICATION_TO_SECTION(id, level)))) = handler
 #endif
 
-/**
- * @defgroup MessageHandlerMacros 消息处理器注册宏。
- * @{
- *
- * 便捷宏，用于注册不同级别的消息处理器。
- * 消息处理器按级别顺序执行: L1 -> L2 -> ... -> L8。
- * 同一级别也支持注册任意多个处理器，处理器按链接顺序执行。
- */
+#if 1 /* 消息处理器注册接口 */
 
 /**
  * @brief 注册 L1 级别的消息处理器。
@@ -307,7 +307,7 @@ extern "C"
  */
 #define APPLICATION_REGISTER_HANDLER_L8(id, handler) _APPLICATION_REGISTER_HANDLER(id, 8, handler)
 
-    /** @} */
+#endif
 
 #ifdef __cplusplus
 }
