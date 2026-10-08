@@ -1,13 +1,13 @@
 /**
  * @file Application.h
  * @copyright Copyright (c) 2026 weas.top team. All rights reserved.
- * @brief 消息驱动型的裸机应用程序框架，建议在应用程序中把消息处理器当作状态机的事件发生器。
+ * @brief 消息驱动型的裸机应用程序框架，建议在应用程序中把消息处理器当作状态机的事件发生器使用。
  *
  * 本框架基于消息队列实现的事件驱动型应用程序框架，支持:
  * - 异步投递消息。
  * - 同步发送消息。
  * - 消息支持 8 个级别(L1-L8)的消息处理器，执行顺序：L1 -> L2 -> ... -> L8。每个级别支持任意多的消息处理器，按链接顺序执行。
- * - 消息 Id 值域：[0, APPLICATION_MESSAGE_ID_RANGE-1]。系统保留 {0,1,2,3} 4条用于系统初始化等，
+ * - 消息 Id 值域：[0, APPLICATION_MESSAGE_ID_RANGE-1]。系统保留 {0,1,2,3} 4条用于系统初始化。
  *   用户可以在 [4,APPLICATION_MESSAGE_ID_RANGE-1] 间编制消息。
  * - 消息中字段最少保留字段 Id，其它字段 BParam、WParam、DParam、QParam 可由用户自由扩展使用，满足不同应用需求。
  *   如果消息 Id 不够可以使用消息中其它字段 BParam、WParam、DParam、QParam 来扩展消息 Id，只需要在消息处理器中进行显式区分。如：
@@ -27,8 +27,9 @@
  * @code
  * 1. 在 main() 中调用 Application_Run() 启动主循环（只允许调用一次）:
  *    int main(void) {
+ *       int p = 0; // 自定义初始化参数。
  *       extern int Application_Run(void*);
- *       return Application_Run(0);  // 永远不会返回。
+ *       return Application_Run(&p);  // 永远不会返回。
  *    }
  *
  * 2. 使用宏注册消息处理器（可在任意文件中注册）:
@@ -38,7 +39,7 @@
  *    APPLICATION_REGISTER_HANDLER_L1(1, HandleKeyPress);
  *
  * 3. 投递/发送消息:
- *    Application_MessageType msg = {1, 0, 0, 0};
+ *    Application_MessageType msg = {.Id = 1};
  *    Application_PostMessage(&msg); // 异步投递
  *    // 或
  *    Application_SendMessage(&msg); // 同步发送
@@ -213,7 +214,7 @@ extern "C"
     /**
      * @brief 同步发送消息
      *
-     * 立即调用该消息 ID 对应的所有处理器（L1-L8），不经过消息队列。
+     * 立即执行该消息 ID 对应的所有处理器（L1-L8），不经过消息队列。
      * 处理器按级别顺序执行：L1 -> L2 -> ... -> L8，同一级别内的处理器按链接顺序执行。
      *
      * @param message 指向要发送的消息的指针，不允许为 NULL。
@@ -224,7 +225,7 @@ extern "C"
      */
     Application_ErrorType Application_SendMessage(Application_MessageType *message);
 
-#if 1 /* 内部使用宏，禁止外部使用和修改 */
+#if 1 /* 内部使用宏，禁止外部使用 */
 
 #define _APPLICATION_STRING(a) #a
 #define _APPLICATION_CONCAT_STRING(a, b, c, d) _APPLICATION_STRING(a.b.c.d)
