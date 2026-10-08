@@ -396,7 +396,7 @@ int Application_Run(void *parameter)
     return 0;
 }
 
-Application_ErrorType Application_PostMessage(Application_MessageType *message)
+int32_t Application_PostMessage(Application_MessageType *message)
 {
     if (message == NULL)
     {
@@ -421,7 +421,7 @@ Application_ErrorType Application_PostMessage(Application_MessageType *message)
     }
 }
 
-Application_ErrorType Application_SendMessage(Application_MessageType *message)
+int32_t Application_SendMessage(Application_MessageType *message)
 {
     if (message == NULL)
     {
