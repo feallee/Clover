@@ -288,15 +288,15 @@
     X(254)          \
     X(255)
 
-#if APPLICATION_MESSAGE_ID_RANGE == UINT32_C(16)
+#if APPLICATION_MESSAGE_RANGE == UINT32_C(16)
 #define _LIST _LIST16
-#elif APPLICATION_MESSAGE_ID_RANGE == UINT32_C(32)
+#elif APPLICATION_MESSAGE_RANGE == UINT32_C(32)
 #define _LIST _LIST32
-#elif APPLICATION_MESSAGE_ID_RANGE == UINT32_C(64)
+#elif APPLICATION_MESSAGE_RANGE == UINT32_C(64)
 #define _LIST _LIST64
-#elif APPLICATION_MESSAGE_ID_RANGE == UINT32_C(128)
+#elif APPLICATION_MESSAGE_RANGE == UINT32_C(128)
 #define _LIST _LIST128
-#elif APPLICATION_MESSAGE_ID_RANGE == UINT32_C(256)
+#elif APPLICATION_MESSAGE_RANGE == UINT32_C(256)
 #define _LIST _LIST256
 #else
 #define _LIST _LIST8
@@ -402,7 +402,8 @@ int32_t Application_PostMessage(Application_MessageType *message)
     {
         return APPLICATION_ERROR_NULL;
     }
-    if (message->Id >= APPLICATION_MESSAGE_ID_RANGE)
+    if (message->Id >= APPLICATION_MESSAGE_RANGE ||
+        message->Id < 4)
     {
         return APPLICATION_ERROR_RANGE;
     }
@@ -427,7 +428,8 @@ int32_t Application_SendMessage(Application_MessageType *message)
     {
         return APPLICATION_ERROR_NULL;
     }
-    if (message->Id >= APPLICATION_MESSAGE_ID_RANGE)
+    if (message->Id >= APPLICATION_MESSAGE_RANGE ||
+        message->Id < 4)
     {
         return APPLICATION_ERROR_RANGE;
     }

@@ -14,7 +14,7 @@
 #if 1 /** Application */
 
 /**
- * @def APPLICATION_MESSAGE_TYPE_PAYLOAD
+ * @def APPLICATION_MESSAGE_PAYLOAD
  * @brief 消息类型负载，表示负载包含的字段数量。值域[1,5]，如果没有定义或超出值域，应用程序会强制设置为默认值 1。
  * - 1: 包含字段：Id(8 bit)。
  * - 2: 包含字段：Id(8 bit), BParam(8 bit)。
@@ -23,10 +23,10 @@
  * - 5: 包含字段：Id(8 bit), BParam(8 bit), WParam(16 bit), DParam(32 bit), QParam(64 bit)。
  * @note 由于负载字段会增加消息结构体的大小，建议根据实际需求选择合适的字段数量，以平衡功能和内存占用。
  */
-#define APPLICATION_MESSAGE_TYPE_PAYLOAD UINT32_C(1)
+#define APPLICATION_MESSAGE_PAYLOAD UINT32_C(1)
 
 /**
- * @def APPLICATION_MESSAGE_ID_RANGE
+ * @def APPLICATION_MESSAGE_RANGE
  * @brief 消息 Id 范围。值域{8,16,32,64,128,256}，如果没有定义或超出值域，应用程序会强制设置为默认值 8。
  * - 8：消息 Id 取值范围为 0-7；
  * - 16：消息 Id 取值范围为 0-15；
@@ -35,7 +35,7 @@
  * - 128：消息 Id 取值范围为 0-127；
  * - 256：消息 Id 取值范围为 0-255。
  */
-#define APPLICATION_MESSAGE_ID_RANGE UINT32_C(8)
+#define APPLICATION_MESSAGE_RANGE UINT32_C(8)
 
 /**
  * @def APPLICATION_MESSAGE_CAPACITY
@@ -46,19 +46,20 @@
 #define APPLICATION_MESSAGE_CAPACITY UINT32_C(64)
 
 /**
- * @def APPLICATION_LINK_ROOT_SYMBOL
- * @brief 消息处理器链接根符号。链接后生成段名格式：<APPLICATION_LINK_ROOT_SYMBOL>.<APPLICATION_LINK_SUB_SYMBOL>.<ID>.<LEVEL>。
+ * @def APPLICATION_LINK_SYMBOL_ROOT
+ * @brief 消息处理器链接根符号。
+ * 链接后生成段名格式：<APPLICATION_LINK_SYMBOL_ROOT>.<APPLICATION_LINK_SYMBOL_SUB>.<ID>.<LEVEL>。
  */
-#define APPLICATION_LINK_ROOT_SYMBOL Entry
+#define APPLICATION_LINK_SYMBOL_ROOT Entry
 
 /**
- * @def APPLICATION_LINK_SUB_SYMBOL
+ * @def APPLICATION_LINK_SYMBOL_SUB
  * @brief 消息处理器链接子符号。
  */
-#define APPLICATION_LINK_SUB_SYMBOL AppMsg
+#define APPLICATION_LINK_SYMBOL_SUB AppMsg
 
 /**
- * @defgroup application_user_message_ids 用户自定义消息。值域[4,APPLICATION_MESSAGE_ID_RANGE-1]。
+ * @defgroup application_user_message_ids 用户自定义消息。值域[4,APPLICATION_MESSAGE_RANGE-1]。
  * @{
  */
 /*TODO 在这里自定义消息*/

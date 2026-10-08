@@ -3,13 +3,12 @@
  * @brief 消息驱动型的裸机应用程序框架，建议在应用程序中把消息处理器当作状态机的事件发生器使用。
  *
  * 本框架基于消息队列实现的事件驱动型应用程序框架，支持:
- * - 异步投递消息。
- * - 同步发送消息。
- * - 消息支持 8 个级别(L1-L8)的消息处理器，执行顺序：L1 -> L2 -> ... -> L8。每个级别支持任意多的消息处理器，按链接顺序执行。
- * - 消息 Id 值域：[0, APPLICATION_MESSAGE_ID_RANGE-1]。系统保留 {0,1,2,3} 4条用于系统初始化。
- *   用户可以在 [4,APPLICATION_MESSAGE_ID_RANGE-1] 间编制消息。
- * - 消息中字段最少保留字段 Id，其它字段 BParam、WParam、DParam、QParam 可由用户自由扩展使用，满足不同应用需求。
- *   如果消息 Id 不够可以使用消息中其它字段 BParam、WParam、DParam、QParam 来扩展消息 Id，只需要在消息处理器中进行显式区分。如：
+ * - 异步、同步投递消息。
+ * - 8 个级别(L1-L8)的消息处理器，执行顺序：L1 -> L2 -> ... -> L8。每个级别支持任意多的消息处理器，按链接顺序执行。
+ * - 消息 Id 值域：[0, APPLICATION_MESSAGE_RANGE-1]。系统保留 4 条 {0,1,2,3} 用于系统初始化。
+ *   用户可以在 [4,APPLICATION_MESSAGE_RANGE-1] 间编制消息。
+ * - 消息负载最少保留字段 Id，其它字段 BParam、WParam、DParam、QParam 可由用户自由扩展，满足不同应用需求。
+ *   如果消息 Id 不够可以使用消息中其它字段 BParam、WParam、DParam、QParam 来扩展，只需要在消息处理器中进行显式区分。如：
  * @code
  *    static void HandleKeyPress(Application_MessageType *msg) {
  *        if(msg->BParam == 0) {
@@ -22,13 +21,12 @@
  *        }
  *    }
  * @endcode
- * 使用方法:
- * @code
- * 1. 在 main() 中调用 Application_Run() 启动主循环（只允许调用一次）:
- *    int main(void) {
- *       int p = 0; // 自定义初始化参数。
+ *
+ * @code 使用方法:
+ * 1. 在 main 中调用 Application_Run() 启动主循环（只允许调用一次）:
+ *    int main(void) { *
  *       extern int Application_Run(void*);
- *       return Application_Run(&p);  // 永远不会返回。
+ *       return Application_Run(0);  // 永远不会返回。
  *    }
  *
  * 2. 使用宏注册消息处理器（可在任意文件中注册）:
@@ -38,7 +36,7 @@
  *    APPLICATION_REGISTER_HANDLER_L1(1, HandleKeyPress);
  *
  * 3. 投递/发送消息:
- *    Application_MessageType msg = {.Id = 1};
+ *    Application_MessageType msg = (Application_MessageType){.Id = 1};
  *    Application_PostMessage(&msg); // 异步投递
  *    // 或
  *    Application_SendMessage(&msg); // 同步发送
@@ -46,7 +44,7 @@
  *
  * @note 注意事项:
  * - MDK 编译器不要求显式定义消息处理器段。
- * - GCC 编译器需要在链接脚本显式定义消息处理器段 <APPLICATION_LINK_ROOT_SYMBOL>.* 段并排序，如:
+ * - GCC 编译器需要在链接脚本显式定义消息处理器段 <APPLICATION_LINK_SYMBOL_ROOT>.* 段并排序，如:
  *
  *   //... other sections
  *    KEEP(*(SORT(.Entry.*)))
@@ -67,6 +65,7 @@
  * @note 修订记录
  * | 版本 | 日期       | 作者                | 日志                                                                            |
  * | ---- | ---------- | ------------------- | ------------------------------------------------------------------------------- |
+ * |      | 2026/10/08 | feallee@hotmail.com | 修改错误码定义和函数返回值类型。                                                |
  * |      | 2026/07/05 | feallee@hotmail.com | 临界区改用 Port_Lock/Port_Unlock 内联函数，修复系统消息 payload 残留问题。      |
  * |      | 2026/05/08 | feallee@hotmail.com | 优化代码。                                                                      |
  * |      | 2026/03/06 | feallee@hotmail.com | 初版。                                                                          |
@@ -82,17 +81,17 @@ extern "C"
 
 #if 1 /*配置校正*/
 
-#if (!defined(APPLICATION_MESSAGE_TYPE_PAYLOAD)) ||     \
-    (APPLICATION_MESSAGE_TYPE_PAYLOAD < UINT32_C(1)) || \
-    (APPLICATION_MESSAGE_TYPE_PAYLOAD > UINT32_C(5))
+#if (!defined(APPLICATION_MESSAGE_PAYLOAD)) ||     \
+    (APPLICATION_MESSAGE_PAYLOAD < UINT32_C(1)) || \
+    (APPLICATION_MESSAGE_PAYLOAD > UINT32_C(5))
 #define APPLICATION_MESSAGE_TYPE_PAYLOAD UINT32_C(1)
 #endif
 
-#if (!defined(APPLICATION_MESSAGE_ID_RANGE)) ||       \
-    (APPLICATION_MESSAGE_ID_RANGE < UINT32_C(8)) ||   \
-    (APPLICATION_MESSAGE_ID_RANGE > UINT32_C(256)) || \
-    ((APPLICATION_MESSAGE_ID_RANGE & (APPLICATION_MESSAGE_ID_RANGE - UINT32_C(1))) != UINT32_C(0))
-#define APPLICATION_MESSAGE_ID_RANGE UINT32_C(8)
+#if (!defined(APPLICATION_MESSAGE_RANGE)) ||       \
+    (APPLICATION_MESSAGE_RANGE < UINT32_C(8)) ||   \
+    (APPLICATION_MESSAGE_RANGE > UINT32_C(256)) || \
+    ((APPLICATION_MESSAGE_RANGE & (APPLICATION_MESSAGE_RANGE - UINT32_C(1))) != UINT32_C(0))
+#define APPLICATION_MESSAGE_RANGE UINT32_C(8)
 #endif
 
 #if (!defined(APPLICATION_MESSAGE_CAPACITY)) ||              \
@@ -102,17 +101,17 @@ extern "C"
 #define APPLICATION_MESSAGE_CAPACITY UINT32_C(64)
 #endif
 
-#ifndef APPLICATION_LINK_ROOT_SYMBOL
-#define APPLICATION_LINK_ROOT_SYMBOL Entry
+#ifndef APPLICATION_LINK_SYMBOL_ROOT
+#define APPLICATION_LINK_SYMBOL_ROOT Entry
 #endif
 
-#ifndef APPLICATION_LINK_SUB_SYMBOL
-#define APPLICATION_LINK_SUB_SYMBOL AppMsg
+#ifndef APPLICATION_LINK_SYMBOL_SUB
+#define APPLICATION_LINK_SYMBOL_SUB AppMsg
 #endif
 
 #endif
 
-#if 1 /* Application 保留消息 {0,1,2,3}。 */
+#if 1 /* 应用程序保留消息 {0,1,2,3}。 */
 
 /**
  * @brief 系统初始化消息 ID。用于应用程序启动时进行初始化操作(如全局变量等软件类操作)。
@@ -160,26 +159,41 @@ extern "C"
 
 #endif
 
-#if 1 /* 应用程序类型 */
+#if 1 /* 应用程序消息类型 */
     /**
-     * @brief 应用消息类型。
+     * @brief 应用程序消息类型。
      */
     typedef struct
     {
-#if APPLICATION_MESSAGE_TYPE_PAYLOAD >= UINT32_C(1)
-        uint8_t Id; ///< 消息 Id (0 到 APPLICATION_MESSAGE_ID_RANGE-1)。
+#if APPLICATION_MESSAGE_PAYLOAD >= UINT32_C(1)
+        /**
+         * @brief 消息 Id (0 到 APPLICATION_MESSAGE_RANGE-1)。
+         */
+        uint8_t Id;
 #endif
-#if APPLICATION_MESSAGE_TYPE_PAYLOAD >= UINT32_C(2)
-        uint8_t BParam; ///< 字节参数 (8位)
+#if APPLICATION_MESSAGE_PAYLOAD >= UINT32_C(2)
+        /**
+         * @brief 字节参数 (8位)。
+         */
+        uint8_t BParam;
 #endif
-#if APPLICATION_MESSAGE_TYPE_PAYLOAD >= UINT32_C(3)
-        uint16_t WParam; ///< 字参数 (16位)
+#if APPLICATION_MESSAGE_PAYLOAD >= UINT32_C(3)
+        /**
+         * @brief 字参数 (16位)。
+         */
+        uint16_t WParam;
 #endif
-#if APPLICATION_MESSAGE_TYPE_PAYLOAD >= UINT32_C(4)
-        uint32_t DParam; ///< 双字参数 (32位)
+#if APPLICATION_MESSAGE_PAYLOAD >= UINT32_C(4)
+        /**
+         * @brief 双字参数 (32位)。
+         */
+        uint32_t DParam;
 #endif
-#if APPLICATION_MESSAGE_TYPE_PAYLOAD >= UINT32_C(5)
-        uint64_t QParam; ///< 四字参数 (64位)
+#if APPLICATION_MESSAGE_PAYLOAD >= UINT32_C(5)
+        /**
+         * @brief 四字参数 (64位)
+         */
+        uint64_t QParam;
 #endif
     } Application_MessageType;
 
@@ -191,7 +205,7 @@ extern "C"
 
 #endif
 
-#if 1 /* 应用程序接口 */   
+#if 1 /* 应用程序接口 */
 
     /**
      * @brief 运行应用程序并处理消息循环。
@@ -202,6 +216,7 @@ extern "C"
      * @note 该函数包含无限循环，正常情况下不会返回。
      * @note 函数启动时会先同步发送 APPLICATION_MESSAGE_ID_INIT 消息进行初始化。
      * @note 当队列为空时，发送 APPLICATION_MESSAGE_ID_IDLE 消息，用户可在消息处理器中进入低功耗模式。
+     * @return 返回消息循环处理错误码。
      */
     int Application_Run(void *parameter);
 
@@ -213,6 +228,10 @@ extern "C"
      *
      * @param message 指向要投递的消息的指针，不允许为 NULL。
      * @return 返回错误码。
+     * @retval APPLICATION_ERROR_NULL 参数 message 为 NULL。
+     * @retval APPLICATION_ERROR_RANGE 消息 Id 超过 APPLICATION_MESSAGE_RANGE 或是保留消息。
+     * @retval APPLICATION_ERROR_FULL 消息队列已满。
+     * @retval APPLICATION_ERROR_NONE 成功投递消息。
      *
      * @note 该函数是线程/中断安全的，可以在中断中调用。
      */
@@ -221,11 +240,13 @@ extern "C"
     /**
      * @brief 同步发送消息
      *
-     * 立即执行该消息 ID 对应的所有处理器（L1-L8），不经过消息队列。
-     * 处理器按级别顺序执行：L1 -> L2 -> ... -> L8，同一级别内的处理器按链接顺序执行。
+     * 立即执行该消息 Id 对应的所有处理器（L1-L8），不经过消息队列。
      *
      * @param message 指向要发送的消息的指针，不允许为 NULL。
      * @return 返回错误码。
+     * @retval APPLICATION_ERROR_NULL 参数 message 为 NULL。
+     * @retval APPLICATION_ERROR_RANGE 消息 Id 超过 APPLICATION_MESSAGE_RANGE 或是保留消息。
+     * @retval APPLICATION_ERROR_NONE 成功投递消息。
      *
      * @note 该函数是同步的，会阻塞直到所有处理器执行完毕。
      */
@@ -237,12 +258,12 @@ extern "C"
 #define _APPLICATION_STRING(a) #a
 #define _APPLICATION_CONCAT_STRING(a, b, c, d) _APPLICATION_STRING(a.b.c.d)
 #define _APPLICATION_TO_SECTION(id, level) \
-    _APPLICATION_CONCAT_STRING(APPLICATION_LINK_ROOT_SYMBOL, APPLICATION_LINK_SUB_SYMBOL, id, level)
+    _APPLICATION_CONCAT_STRING(APPLICATION_LINK_SYMBOL_ROOT, APPLICATION_LINK_SYMBOL_SUB, id, level)
 
 #define _APPLICATION_SYMBOL(a, b, c, d) _##a##_##b##_##c##_##d
 #define _APPLICATION_CONCAT_SYMBOL(a, b, c, d) _APPLICATION_SYMBOL(a, b, c, d)
 #define _APPLICATION_TO_MEMBER(id, level, handler) \
-    _APPLICATION_CONCAT_SYMBOL(APPLICATION_LINK_SUB_SYMBOL, id, level, handler)
+    _APPLICATION_CONCAT_SYMBOL(APPLICATION_LINK_SYMBOL_SUB, id, level, handler)
 
 #define _APPLICATION_REGISTER_HANDLER(id, level, handler)                                  \
     static const Application_MessageHandlerType _APPLICATION_TO_MEMBER(id, level, handler) \
@@ -253,56 +274,56 @@ extern "C"
 
 /**
  * @brief 注册 L1 级别的消息处理器。
- * @param id 消息 ID (0 到 APPLICATION_MESSAGE_ID_RANGE-1)。
+ * @param id 消息 ID (0 到 APPLICATION_MESSAGE_RANGE-1)。
  * @param handler 消息处理器函数名，必须符合 Application_MessageHandlerType 类型。
  */
 #define APPLICATION_REGISTER_HANDLER_L1(id, handler) _APPLICATION_REGISTER_HANDLER(id, 1, handler)
 
 /**
  * @brief 注册 L2 级别的消息处理器。
- * @param id 消息 ID (0 到 APPLICATION_MESSAGE_ID_RANGE-1)。
+ * @param id 消息 ID (0 到 APPLICATION_MESSAGE_RANGE-1)。
  * @param handler 消息处理器函数名，必须符合 Application_MessageHandlerType 类型。
  */
 #define APPLICATION_REGISTER_HANDLER_L2(id, handler) _APPLICATION_REGISTER_HANDLER(id, 2, handler)
 
 /**
  * @brief 注册 L3 级别的消息处理器。
- * @param id 消息 ID (0 到 APPLICATION_MESSAGE_ID_RANGE-1)。
+ * @param id 消息 ID (0 到 APPLICATION_MESSAGE_RANGE-1)。
  * @param handler 消息处理器函数名，必须符合 Application_MessageHandlerType 类型。
  */
 #define APPLICATION_REGISTER_HANDLER_L3(id, handler) _APPLICATION_REGISTER_HANDLER(id, 3, handler)
 
 /**
  * @brief 注册 L4 级别的消息处理器。
- * @param id 消息 ID (0 到 APPLICATION_MESSAGE_ID_RANGE-1)。
+ * @param id 消息 ID (0 到 APPLICATION_MESSAGE_RANGE-1)。
  * @param handler 消息处理器函数名，必须符合 Application_MessageHandlerType 类型。
  */
 #define APPLICATION_REGISTER_HANDLER_L4(id, handler) _APPLICATION_REGISTER_HANDLER(id, 4, handler)
 
 /**
  * @brief 注册 L5 级别的消息处理器。
- * @param id 消息 ID (0 到 APPLICATION_MESSAGE_ID_RANGE-1)。
+ * @param id 消息 ID (0 到 APPLICATION_MESSAGE_RANGE-1)。
  * @param handler 消息处理器函数名，必须符合 Application_MessageHandlerType 类型。
  */
 #define APPLICATION_REGISTER_HANDLER_L5(id, handler) _APPLICATION_REGISTER_HANDLER(id, 5, handler)
 
 /**
  * @brief 注册 L6 级别的消息处理器。
- * @param id 消息 ID (0 到 APPLICATION_MESSAGE_ID_RANGE-1)。
+ * @param id 消息 ID (0 到 APPLICATION_MESSAGE_RANGE-1)。
  * @param handler 消息处理器函数名，必须符合 Application_MessageHandlerType 类型。
  */
 #define APPLICATION_REGISTER_HANDLER_L6(id, handler) _APPLICATION_REGISTER_HANDLER(id, 6, handler)
 
 /**
  * @brief 注册 L7 级别的消息处理器。
- * @param id 消息 ID (0 到 APPLICATION_MESSAGE_ID_RANGE-1)。
+ * @param id 消息 ID (0 到 APPLICATION_MESSAGE_RANGE-1)。
  * @param handler 消息处理器函数名，必须符合 Application_MessageHandlerType 类型。
  */
 #define APPLICATION_REGISTER_HANDLER_L7(id, handler) _APPLICATION_REGISTER_HANDLER(id, 7, handler)
 
 /**
  * @brief 注册 L8 级别的消息处理器。
- * @param id 消息 ID (0 到 APPLICATION_MESSAGE_ID_RANGE-1)。
+ * @param id 消息 ID (0 到 APPLICATION_MESSAGE_RANGE-1)。
  * @param handler 消息处理器函数名，必须符合 Application_MessageHandlerType 类型。
  */
 #define APPLICATION_REGISTER_HANDLER_L8(id, handler) _APPLICATION_REGISTER_HANDLER(id, 8, handler)
