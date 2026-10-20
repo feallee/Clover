@@ -153,7 +153,7 @@ extern "C"
 /**
  * 资源已满。
  */
-#define APPLICATION_ERROR_FULL = (-4)
+#define APPLICATION_ERROR_FULL (-4)
 
 #endif
 
