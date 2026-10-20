@@ -44,10 +44,11 @@
  *
  * @note 注意事项:
  * - MDK 编译器不要求显式定义消息处理器段。
- * - GCC 编译器需要在链接脚本显式定义消息处理器段 <APPLICATION_LINK_SYMBOL_ROOT>.* 段并排序，如:
+ * - GCC 编译器需要在链接脚本显式定义消息处理器段 <APPLICATION_LINK_SYMBOL_ROOT>.* 段（形如
+ *   Entry.AppMsg.<id>.<level>，无前导 "."）并排序，如:
  *
  *   //... other sections
- *    KEEP(*(SORT(.Entry.*)))
+ *    KEEP(*(SORT(Entry.*)))
  *   //... other sections
  *
  * - 其它编译器，根据具体要求进行配置。
@@ -60,15 +61,12 @@
  *
  * @note 依赖项:
  *       - Port.h:  提供 Port_Lock/Port_Unlock 内联函数用于临界区保护。
- *       - 链接脚本: GCC 编译器需配置 Entry.* 段。
+ *       - 链接脚本: GCC 编译器需配置 Entry.* 段（无前导 "."）。
  *
  * @note 修订记录
  * | 版本 | 日期       | 作者                | 日志                                                                            |
  * | ---- | ---------- | ------------------- | ------------------------------------------------------------------------------- |
- * |      | 2026/10/08 | feallee@hotmail.com | 修改错误码定义和函数返回值类型。                                                |
- * |      | 2026/07/05 | feallee@hotmail.com | 临界区改用 Port_Lock/Port_Unlock 内联函数，修复系统消息 payload 残留问题。      |
- * |      | 2026/05/08 | feallee@hotmail.com | 优化代码。                                                                      |
- * |      | 2026/03/06 | feallee@hotmail.com | 初版。                                                                          |
+ * |      | 2026/10/20 | feallee@hotmail.com | 修正消息处理器段链接脚本注释。                                                  |
  */
 #pragma once
 #include <stddef.h>

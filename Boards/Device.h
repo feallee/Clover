@@ -1,15 +1,17 @@
 /**
  * @file Device.h
- * @brief 消息驱动型的裸机应用程序框架，建议在应用程序中把消息处理器当作状态机的事件发生器使用。
+ * @brief 统一的设备抽象层，为用户提供设备的注册与访问接口。
  *
- *
+ * 用户通过 DEVICE_REGISTER 把设备注册到由链接器收集的设备表中，
+ * 再按名称查找设备，打开之后使用统一的读、写、控制接口访问设备。
  *
  * @note 注意事项:
- * - MDK 编译器不要求显式定义消息处理器段。
- * - GCC 编译器需要在链接脚本显式定义消息处理器段 <APPLICATION_LINK_SYMBOL_ROOT>.* 段并排序，如:
+ * - MDK 编译器不要求显式定义设备段。
+ * - GCC 编译器需要在链接脚本显式定义设备段 <DEVICE_LINK_SYMBOL>.* 段（形如 Device.<level>，
+ *   无前导 "."）并排序，如:
  *
  *   //... other sections
- *    KEEP(*(SORT(.Entry.*)))
+ *    KEEP(*(SORT(Device.*)))
  *   //... other sections
  *
  * - 其它编译器，根据具体要求进行配置。
@@ -19,16 +21,12 @@
  * @warning 本库只支持 C99 及以上标准。
  *
  * @note 依赖项:
- *       - Port.h:  提供 Port_Lock/Port_Unlock 内联函数用于临界区保护。
- *       - 链接脚本: GCC 编译器需配置 Entry.* 段。
+ *       - 链接脚本: GCC 编译器需配置 Device.* 段（无前导 "."）。
  *
  * @note 修订记录
  * | 版本 | 日期       | 作者                | 日志                                                                            |
  * | ---- | ---------- | ------------------- | ------------------------------------------------------------------------------- |
- * |      | 2026/10/08 | feallee@hotmail.com | 修改错误码定义和函数返回值类型。                                                |
- * |      | 2026/07/05 | feallee@hotmail.com | 临界区改用 Port_Lock/Port_Unlock 内联函数，修复系统消息 payload 残留问题。      |
- * |      | 2026/05/08 | feallee@hotmail.com | 优化代码。                                                                      |
- * |      | 2026/03/06 | feallee@hotmail.com | 初版。                                                                          |
+ * |      | 2026/10/20 | feallee@hotmail.com | 实现设备表遍历与 DEVICE_REGISTER 注册，修正设备段链接脚本注释。                 |
  */
 #pragma once
 #include <inttypes.h>
@@ -83,14 +81,8 @@ extern "C"
         int32_t (*Control)(uint32_t command, const void *parameter);
     };
 
-    /**
-     * @brief 根据名称打开设备并返回实例。
-     *
-     * @param name 设备名称。
-     * @return DeviceType* 设备对象。
-     */
-
-    DeviceType *Device_Open(const char *name, const void *parameter);
+    DeviceType *Device_Find(const char *name);
+    int32_t Device_Open(DeviceType *device, const void *parameter);
     int32_t Device_Close(DeviceType *device);
     int32_t Device_Read(DeviceType *device, void *buffer, uint32_t length, const void *parameter);
     int32_t Device_Write(DeviceType *device, const void *buffer, uint32_t length, const void *parameter);
