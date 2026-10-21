@@ -36,7 +36,7 @@
  *    APPLICATION_REGISTER_HANDLER_L1(1, HandleKeyPress);
  *
  * 3. 投递/发送消息:
- *    Application_MessageType msg = (Application_MessageType){.Id = 1};
+ *    Application_MessageType msg = (Application_MessageType){.Id = 4};
  *    Application_PostMessage(&msg); // 异步投递
  *    // 或
  *    Application_SendMessage(&msg); // 同步发送

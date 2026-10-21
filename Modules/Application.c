@@ -403,7 +403,7 @@ int32_t Application_PostMessage(Application_MessageType *message)
         return APPLICATION_ERROR_NULL;
     }
     if (message->Id >= APPLICATION_MESSAGE_RANGE ||
-        message->Id < 4)
+        message->Id <= APPLICATION_MESSAGE_ID_IDLE)
     {
         return APPLICATION_ERROR_RANGE;
     }
@@ -429,7 +429,7 @@ int32_t Application_SendMessage(Application_MessageType *message)
         return APPLICATION_ERROR_NULL;
     }
     if (message->Id >= APPLICATION_MESSAGE_RANGE ||
-        message->Id < 4)
+        message->Id <= APPLICATION_MESSAGE_ID_IDLE)
     {
         return APPLICATION_ERROR_RANGE;
     }
