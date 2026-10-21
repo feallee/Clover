@@ -70,8 +70,7 @@ extern "C"
 
 #define DEVICE_LINK_SYMBOL Device
 
-    typedef struct DeviceType DeviceType;
-    struct DeviceType
+    typedef struct
     {
         const char *Name;
         int32_t (*Open)(const void *parameter);
@@ -79,7 +78,7 @@ extern "C"
         int32_t (*Read)(void *buffer, uint32_t length, const void *parameter);
         int32_t (*Write)(const void *buffer, uint32_t length, const void *parameter);
         int32_t (*Control)(uint32_t command, const void *parameter);
-    };
+    } DeviceType;
 
     DeviceType *Device_Find(const char *name);
     int32_t Device_Open(DeviceType *device, const void *parameter);

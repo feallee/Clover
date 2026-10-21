@@ -69,3 +69,14 @@
  * @}
  */
 #endif
+
+#if 1 /** Command */
+
+/**
+ * @def COMMAND_LINK_SYMBOL
+ * @brief 命令链接符号。
+ * 链接后生成段名格式：<COMMAND_LINK_SYMBOL>.<LEVEL>。
+ */
+#define COMMAND_LINK_SYMBOL Command
+
+#endif
