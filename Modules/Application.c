@@ -355,6 +355,7 @@ static struct
 {
     volatile uint32_t Head;                                       ///< 读指针，指向下一个要读取的消息位置
     volatile uint32_t Tail;                                       ///< 写指针，指向下一个要写入的消息位置
+    volatile uint32_t Dropped;                                    ///< 队列已满导致 PostMessage 丢弃消息的次数
     Application_MessageType Buffer[APPLICATION_MESSAGE_CAPACITY]; ///< 消息缓冲区（环形队列）
 } _Queue = {0};
 
@@ -410,6 +411,7 @@ int32_t Application_PostMessage(Application_MessageType *message)
     uint32_t st = Port_Lock();
     if (_Queue.Tail - _Queue.Head == APPLICATION_MESSAGE_CAPACITY) /*队列已满*/
     {
+        _Queue.Dropped++;
         Port_Unlock(st);
         return APPLICATION_ERROR_FULL;
     }
@@ -420,6 +422,14 @@ int32_t Application_PostMessage(Application_MessageType *message)
         Port_Unlock(st);
         return APPLICATION_ERROR_NONE;
     }
+}
+
+uint32_t Application_GetDroppedCount(void)
+{
+    uint32_t st = Port_Lock();
+    uint32_t dropped = _Queue.Dropped;
+    Port_Unlock(st);
+    return dropped;
 }
 
 int32_t Application_SendMessage(Application_MessageType *message)

@@ -249,6 +249,17 @@ extern "C"
      * @note 该函数是同步的，会阻塞直到所有处理器执行完毕。
      */
     int32_t Application_SendMessage(Application_MessageType *message);
+
+    /**
+     * @brief 获取消息队列已满导致投递失败（丢弃消息）的次数。
+     *
+     * 每次 Application_PostMessage 因队列已满而丢弃消息时，计数加 1。
+     *
+     * @return 返回队列已满丢弃消息的累计次数。
+     *
+     * @note 该函数是线程/中断安全的，可以在中断中调用。
+     */
+    uint32_t Application_GetDroppedCount(void);
 #endif
 
 #if 1 /* 内部使用宏，禁止外部使用 */
