@@ -24,19 +24,20 @@
  *
  * @code 使用方法:
  * 1. 在 main 中调用 Application_Run() 启动主循环（只允许调用一次）:
- *    int main(void) { *
+ *    int main(void) {
  *       extern int Application_Run(void*);
  *       return Application_Run(0);  // 永远不会返回。
  *    }
  *
  * 2. 使用宏注册消息处理器（可在任意文件中注册）:
+ *    #define APPLICATION_MESSAGE_ID_KEY_PRESS 4
  *    static void HandleKeyPress(const Application_MessageType *msg) {
  *        // 处理按键消息
  *    }
- *    APPLICATION_REGISTER_HANDLER_L1(4, HandleKeyPress);
+ *    APPLICATION_REGISTER_HANDLER_L1(APPLICATION_MESSAGE_ID_KEY_PRESS, HandleKeyPress);
  *
  * 3. 投递/发送消息:
- *    Application_MessageType msg = (Application_MessageType){.Id = 4};
+ *    Application_MessageType msg = (Application_MessageType){.Id = APPLICATION_MESSAGE_ID_KEY_PRESS};
  *    Application_PostMessage(&msg); // 异步投递
  *    // 或
  *    Application_SendMessage(&msg); // 同步发送
