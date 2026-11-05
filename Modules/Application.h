@@ -263,6 +263,18 @@ extern "C"
      * @note 该函数是线程/中断安全的，可以在中断中调用。
      */
     uint32_t Application_GetDroppedCount(void);
+
+    /**
+     * @brief 获取消息队列剩余容量。
+     *
+     * 剩余容量 = APPLICATION_MESSAGE_CAPACITY - (Tail - Head)，即还能成功投递的消息条数。
+     *
+     * @return 返回消息队列当前剩余的可投递消息条数。
+     *
+     * @note 该函数是线程/中断安全的，可以在中断中调用。
+     * @note 返回值仅在调用瞬间有效，多生产者场景下投递仍可能因队列已满而失败。
+     */
+    uint32_t Application_GetFreeCount(void);
 #endif
 
 #if 1 /* 内部使用宏，禁止外部使用 */

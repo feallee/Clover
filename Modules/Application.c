@@ -432,6 +432,14 @@ uint32_t Application_GetDroppedCount(void)
     return dropped;
 }
 
+uint32_t Application_GetFreeCount(void)
+{
+    uint32_t st = Port_Lock();
+    uint32_t freeCount = APPLICATION_MESSAGE_CAPACITY - (_Queue.Tail - _Queue.Head);
+    Port_Unlock(st);
+    return freeCount;
+}
+
 int32_t Application_SendMessage(const Application_MessageType *message)
 {
     if (message == NULL)
