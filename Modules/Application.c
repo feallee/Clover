@@ -330,7 +330,7 @@ static const MessageTableType _Table[] = {_LIST(_REG_TABLE)};
  *
  * @param message 指向待处理消息的指针。
  */
-static void ExecuteHandler(Application_MessageType *message)
+static void ExecuteHandler(const Application_MessageType *message)
 {
     const MessageTableType *t = &_Table[message->Id];
     for (const Application_MessageHandlerType *h = t->Begin + 1; h < t->End; h++)
@@ -397,7 +397,7 @@ int Application_Run(void *parameter)
     return 0;
 }
 
-int32_t Application_PostMessage(Application_MessageType *message)
+int32_t Application_PostMessage(const Application_MessageType *message)
 {
     if (message == NULL)
     {
@@ -432,7 +432,7 @@ uint32_t Application_GetDroppedCount(void)
     return dropped;
 }
 
-int32_t Application_SendMessage(Application_MessageType *message)
+int32_t Application_SendMessage(const Application_MessageType *message)
 {
     if (message == NULL)
     {

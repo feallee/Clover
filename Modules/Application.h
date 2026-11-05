@@ -10,7 +10,7 @@
  * - 消息负载最少保留字段 Id，其它字段 BParam、WParam、DParam、QParam 可由用户自由扩展，满足不同应用需求。
  *   如果消息 Id 不够可以使用消息中其它字段 BParam、WParam、DParam、QParam 来扩展，只需要在消息处理器中进行显式区分。如：
  * @code
- *    static void HandleKeyPress(Application_MessageType *msg) {
+ *    static void HandleKeyPress(const Application_MessageType *msg) {
  *        if(msg->BParam == 0) {
  *           // do something
  *        } else if(msg->BParam == 1) {
@@ -30,7 +30,7 @@
  *    }
  *
  * 2. 使用宏注册消息处理器（可在任意文件中注册）:
- *    static void HandleKeyPress(Application_MessageType *msg) {
+ *    static void HandleKeyPress(const Application_MessageType *msg) {
  *        // 处理按键消息
  *    }
  *    APPLICATION_REGISTER_HANDLER_L1(1, HandleKeyPress);
@@ -82,13 +82,15 @@ extern "C"
 #if (!defined(APPLICATION_MESSAGE_PAYLOAD)) ||     \
     (APPLICATION_MESSAGE_PAYLOAD < UINT32_C(1)) || \
     (APPLICATION_MESSAGE_PAYLOAD > UINT32_C(5))
-#define APPLICATION_MESSAGE_TYPE_PAYLOAD UINT32_C(1)
+#undef APPLICATION_MESSAGE_PAYLOAD
+#define APPLICATION_MESSAGE_PAYLOAD UINT32_C(1)
 #endif
 
 #if (!defined(APPLICATION_MESSAGE_RANGE)) ||       \
     (APPLICATION_MESSAGE_RANGE < UINT32_C(8)) ||   \
     (APPLICATION_MESSAGE_RANGE > UINT32_C(256)) || \
     ((APPLICATION_MESSAGE_RANGE & (APPLICATION_MESSAGE_RANGE - UINT32_C(1))) != UINT32_C(0))
+#undef APPLICATION_MESSAGE_RANGE
 #define APPLICATION_MESSAGE_RANGE UINT32_C(8)
 #endif
 
@@ -96,6 +98,7 @@ extern "C"
     (APPLICATION_MESSAGE_CAPACITY < UINT32_C(2)) ||          \
     (APPLICATION_MESSAGE_CAPACITY > UINT32_C(2147483648)) || \
     ((APPLICATION_MESSAGE_CAPACITY & (APPLICATION_MESSAGE_CAPACITY - UINT32_C(1))) != UINT32_C(0))
+#undef APPLICATION_MESSAGE_CAPACITY
 #define APPLICATION_MESSAGE_CAPACITY UINT32_C(64)
 #endif
 
@@ -199,7 +202,7 @@ extern "C"
      * @brief 应用消息处理器类型。
      * @param message 指向当前待处理消息的指针。
      */
-    typedef void (*Application_MessageHandlerType)(Application_MessageType *message);
+    typedef void (*Application_MessageHandlerType)(const Application_MessageType *message);
 
 #endif
 
@@ -233,7 +236,7 @@ extern "C"
      *
      * @note 该函数是线程/中断安全的，可以在中断中调用。
      */
-    int32_t Application_PostMessage(Application_MessageType *message);
+    int32_t Application_PostMessage(const Application_MessageType *message);
 
     /**
      * @brief 同步发送消息
@@ -248,7 +251,7 @@ extern "C"
      *
      * @note 该函数是同步的，会阻塞直到所有处理器执行完毕。
      */
-    int32_t Application_SendMessage(Application_MessageType *message);
+    int32_t Application_SendMessage(const Application_MessageType *message);
 
     /**
      * @brief 获取消息队列已满导致投递失败（丢弃消息）的次数。
