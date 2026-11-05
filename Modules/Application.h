@@ -33,7 +33,7 @@
  *    static void HandleKeyPress(const Application_MessageType *msg) {
  *        // 处理按键消息
  *    }
- *    APPLICATION_REGISTER_HANDLER_L1(1, HandleKeyPress);
+ *    APPLICATION_REGISTER_HANDLER_L1(4, HandleKeyPress);
  *
  * 3. 投递/发送消息:
  *    Application_MessageType msg = (Application_MessageType){.Id = 4};
